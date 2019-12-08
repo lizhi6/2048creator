@@ -11,6 +11,10 @@ cc.Class({
         tilePrefab: cc.Prefab,
         tileLayer: cc.Node,
         scoreLable:cc.Label,
+        hisScoreLable:cc.Label,//历史分数
+        overNodePerfab:cc.Prefab,
+        overLayer: cc.Node, 
+        onChuiZi: cc.Node,
     },
 
     // use this for initialization
@@ -19,6 +23,26 @@ cc.Class({
         cc.map = this;
         ///总分数
         this.scoreAll = 0;
+        ////是不是点击了锤子
+        this.isOnChuiZi = false;
+        cc.sys.localStorage.setItem("CZNUM",3);
+        var cznum = cc.sys.localStorage.getItem("CZNUM");
+        this.chuziNum = cznum;
+        if(cznum==null){
+            this.chuziNum = 0;
+        }
+       
+        this.onChuiZi.getChildByName("Label").getComponent(cc.Label).string ="x"+this.chuziNum
+
+        // this.onChuiZi.getComponent(cc.Label).string="x0"
+        var topscore = cc.sys.localStorage.getItem("topScore");
+        this.scoreAllTop = topscore;
+        if(topscore==null){
+           this.scoreAllTop = 0;
+        }
+        this.hisScoreLable.string = "最高分："+this.scoreAllTop
+
+        this.isGameOverNum = false;//如果四边都不能滑动了则游戏结束
         this.mapWidth = this.node.width;
         this.tileWidth = this.mapWidth / 4;
         this.g = this.getComponent(cc.Graphics);
@@ -33,39 +57,79 @@ cc.Class({
         });
         this.node.on(cc.Node.EventType.TOUCH_END, (event) => {
             this.touchEndPosition = event.getLocation();
+        
+            ///先判断锤子
+            if(this.isOnChuiZi){
+                this.isOnChuiZi = false
+                for (let x = 0; x < 4; x++) {
+                    for (let y = 0; y < 4; y++) {          
+                        // this.tiles[x][y].typeNum = customEventData ;
+                        if(this.tiles[x][y].isInTile(this.touchEndPosition.x,this.touchEndPosition.y)&& this.tiles[x][y].number != 0){
+                          
+                           this.chuziNum = this.chuziNum -1;
+                           cc.sys.localStorage.setItem("CZNUM",this.chuziNum);
+                           this.onChuiZi.getChildByName("Label").getComponent(cc.Label).string="x"+this.chuziNum
+                           this.tiles[x][y].number = 0;
+                           cc.audioEngine.play(cc.url.raw("resources/sound/btnclick.mp3"),false,0.5);
+                           cc.log(x,"===========消除了=======",y)
+                           return;
+                        }
+                    }
+                }  
+            }
+
+
+
             let offsetX = this.touchEndPosition.x - this.touchStartPosition.x;
             let offsetY = this.touchEndPosition.y - this.touchStartPosition.y;
+            this.isGameOverNum = true;
+            let num = 0;
             if (Math.abs(offsetX) > Math.abs(offsetY)) {
                 if (offsetX > 5) {
                     this.onRightSlide();
                     cc.log('right');
+                    num = 1;
                 } else if (offsetX < -5) {
                     this.onLeftSlide();
                     cc.log('left');
-                }
+                    num = 1;
+                } 
+                cc.audioEngine.play(cc.url.raw("resources/sound/btnclick.mp3"),false,0.5);
             } else {
                 if (offsetY > 5) {
                     this.onUpSlide();
                     cc.log('up');
+                    num = 1;
                 } else if (offsetY < -5) {
                     this.onDownSlide();
                     cc.log('down');
+                    num = 1;
                 }
+                cc.audioEngine.play(cc.url.raw("resources/sound/btnclick.mp3"),false,0.5);
+            }
+            if(this.isGameOverNum && num != 0){
+                this.initOverNode()
             }
         });
-      
-        cc.loader.loadResDir('', (err, data)=>{ // 注意,这里的prefab/stageitem的根目录是assets/resource
-            if (err) {
-                console.error('cc.loader.loadRes prefab/stageitem ' + err.message);
-                return;
-            }
-            this.drawBg();
-            this.initTiles();
-        });
+    
         this.drawBg();
+        // this.initTiles();
+        // this.drawBg();
         this.initTiles();
 
         this.mergeArray([0,0,2,8]);
+
+        
+        // 初始化背景
+        var titleBgIndex = cc.sys.localStorage.getItem("titleBgIndex");
+        if(titleBgIndex==null){
+            titleBgIndex = 0;
+        }
+        for (let x = 0; x < 4; x++) {
+            for (let y = 0; y < 4; y++) {          
+                this.tiles[x][y].typeNum=titleBgIndex;
+            }
+        }
     },
 
     /**
@@ -78,7 +142,7 @@ cc.Class({
             return;
         }
 
-        cc.log('#1', arr);
+        // cc.log('#1', arr);
 
         // 按照顺序取出非0值
         let src = [];
@@ -90,22 +154,38 @@ cc.Class({
 
         // 模拟栈
         let stack = [];
+        let isfist=true;
         while(src.length > 0){
             // 栈是空或栈顶元素和源数据最后一个不一样
-            if(stack.length <= 0 || stack[0] != src[src.length - 1]){
+            if(stack.length <= 0 || stack[0] != src[src.length - 1]||!isfist){
                 stack.unshift(src[src.length-1]);
                 src.splice(src.length -1, 1);
             }
             // 栈顶出栈
             else{
+                isfist=false;
                 src[src.length-1] = src[src.length-1] * 2;
                 this.scoreAll = this.scoreAll + src[src.length-1]/2
-            
                 stack.splice(0, 1);
+                // break;
             }
         }
-        cc.log('#2', stack);
+        // cc.log('#2', stack);
         this.scoreLable.string = this.scoreAll+''
+       
+        // if(this.scoreAll!=0 && this.scoreAll%10==0 && this.chuziNum <10 ){
+        //     cc.log("==this.chuziNum锤子加一====",this.chuziNum);
+        //     this.chuziNum++;
+        //     this.onChuiZi.getChildByName("Label").getComponent(cc.Label).string="x"+this.chuziNum
+
+        //     cc.sys.localStorage.setItem("CZNUM",this.chuziNum);
+        // }
+
+        if(this.scoreAllTop < this.scoreAll){
+            this.scoreAllTop = this.scoreAll;
+            this.hisScoreLable.string = "最高分："+this.scoreAllTop;
+            cc.sys.localStorage.setItem("topScore",this.scoreAll);
+        }
         return stack;
     },
 
@@ -221,7 +301,7 @@ cc.Class({
         if (isMove) {
             this.newTile();
             this.judgeOver();
-        }
+        } 
     },
 
     onUpSlide() {
@@ -284,16 +364,30 @@ cc.Class({
         for(let x = 0; x < 4;x++){
             for(let y = 0; y < 4; y++) {
                 if(this.tiles[x][y].number === 2048) {
-                    cc.director.loadScene('success');
+                    // cc.director.loadScene('success');
+                    this.initOverNode(true)       
                 }
             }
         }
     },
-
+    initOverNode(iswin){
+        let overNode = cc.instantiate(this.overNodePerfab);
+        this.overLayer.addChild(overNode);
+        let overNodeSp =  overNode.getComponent('overNode');
+        overNode.setPosition(-cc.view.getVisibleSize().width/2,-cc.view.getVisibleSize().height/2);
+        overNode.zIndex = 99;
+        overNode.scoreNum = this.scoreAll;
+       
+        // overNode.refershOverBg();
+        if(iswin){
+            overNodeSp.refershOverBg();
+        }
+    },
     initTiles(tileWidth) {
         this.tileLayer.removeAllChildren();
         this.tiles = [];
         this.zeroTiles = [];
+
         for (let x = 0; x < 4; x++) {
             this.tiles[x] = [];
             for (let y = 0; y < 4; y++) {
@@ -304,16 +398,23 @@ cc.Class({
                 let tile = tileNode.getComponent('Tile');
                 tile.init(x, y, 0);
                 this.tiles[x][y] = tile;
+                cc.log(x,"===",y)
+                cc.log(tileNode.x,"=ssss==",tileNode.y)
                 this.zeroTiles.push(tile);
+
             }
         }
         for (let i = 0; i < 2; i++) {
             this.newTile();
         }
+
+
+  
     },
 
     newTile() {
-        cc.log("创建地图=============")
+    
+        this.isGameOverNum = false;
         this.zeroTiles = [];
         for (let x = 0; x < 4; x++) {
             for (let y = 0; y < 4; y++) {
@@ -335,6 +436,19 @@ cc.Class({
 
     onBtnSleep() {
         cc.director.loadScene('sleep');
-    }
-
+    },
+    onBtnChangPf(event, customEventData){
+        cc.sys.localStorage.setItem("titleBgIndex",customEventData);
+        for (let x = 0; x < 4; x++) {
+            for (let y = 0; y < 4; y++) {          
+                this.tiles[x][y].typeNum = customEventData ;
+            }
+        }
+    },
+    ///锤子数量
+    onChuziNum(){
+        if(this.chuziNum>0){
+            this.isOnChuiZi = true;
+        }
+    },
 });

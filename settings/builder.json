@@ -1,20 +1,17 @@
 {
-  "android-instant": {
-    "REMOTE_SERVER_ROOT": "",
-    "host": "",
-    "pathPattern": "",
-    "recordPath": "",
-    "scheme": "https",
-    "skipRecord": false
-  },
+  "appKey": "",
+  "appSecret": "",
   "encryptJs": true,
   "excludeScenes": [],
   "fb-instant-games": {},
+  "includeAnySDK": false,
   "includeSDKBox": false,
   "inlineSpriteFrames": true,
   "inlineSpriteFrames_native": true,
+  "jailbreakPlatform": false,
   "md5Cache": true,
   "mergeStartScene": false,
+  "oauthLoginServer": "",
   "optimizeHotUpdate": false,
   "orientation": {
     "landscapeLeft": true,
@@ -23,14 +20,15 @@
     "upsideDown": false
   },
   "packageName": "org.cocos2d.2048",
+  "privateKey": "",
   "qqplay": {
     "REMOTE_SERVER_ROOT": "",
     "orientation": "portrait",
     "zip": false
   },
-  "startScene": "ed9a6f36-bebb-4a22-921f-ac91b9309028",
-  "title": "1024",
-  "webOrientation": "auto",
+  "startScene": "1b437ddd-d20a-482c-98c5-25940c49f50c",
+  "title": "2048",
+  "webOrientation": "portrait",
   "wechatgame": {
     "REMOTE_SERVER_ROOT": "https://game.xceshi.top",
     "appid": "wx321df6efb5ecf646",

@@ -27,32 +27,45 @@ cc.Class({
         //         this._bar = value;
         //     }
         // },
+        loading:cc.Node,
+        loadLabel:cc.Label,
     },
 
     // LIFE-CYCLE CALLBACKS:
 
     onLoad () {
-        // this.loadLabel = this.node.getChildByName("loadingBar").getComponent(cc.Label);
+ 
+        ///场景加载
+        // cc.director.preloadScene("game", this.onProgress.bind(this), function(){    
+        //     cc.log("加载成功");
+        //     cc.director.loadScene('game');
+        // })
+        cc.loader.loadResDir("", this._progressCallback.bind(this), function (err, assets) {
+            if (err) { 
+                cc.log( "资源加载出错");
+            }else{
+                cc.log("加载成功");
+                cc.director.loadScene('game');
+            }
+        });
         // cc.loader.loadResDir('', (err, data)=>{ // 注意,这里的prefab/stageitem的根目录是assets/resource
         //     if (err) {
         //         console.error('cc.loader.loadRes prefab/stageitem ' + err.message);
         //         return;
         //     }
- 
         // });
-        cc.director.preloadScene("game", this.onProgress.bind(this), function(){    
-            cc.log("加载成功");
-        })
-
     },
 
     onProgress:function(completedCount, totalCount, item) {
-        this.loading=this.node.getChildByName("loadingBar");
-        this.loading.progress = completedCount/totalCount;
-        this.loadLabel = this.node.getChildByName("loadingBar").getComponent(cc.Label);
+        // this.loading.getComponent(cc.ProgressBar).progress= completedCount/totalCount;
+        // this.loadLabel.string = Math.floor(completedCount/totalCount * 100) + "%";
+    },
+    _progressCallback:function(completedCount, totalCount, item) {
+        cc.log("资源加载") 
+        cc.log(completedCount/totalCount);
+        this.loading.getComponent(cc.ProgressBar).progress= completedCount/totalCount;
         this.loadLabel.string = Math.floor(completedCount/totalCount * 100) + "%";
     },
-
     start () {
 
     },

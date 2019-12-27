@@ -15,12 +15,24 @@ cc.Class({
         overNodePerfab:cc.Prefab,
         overLayer: cc.Node, 
         onChuiZi: cc.Node,
+
+        headImg:cc.Node,
+        nickName:cc.Label,
     },
 
     // use this for initialization
     onLoad: function () {
-
+    
         cc.map = this;
+        cc.log("=======   cc.log(cc.vv.userMgr)==========");
+        cc.log(cc.vv.userMgr);
+        console.log("===cc.vv.userMgr.userInfo");
+        console.log(cc.vv.userMgr.userInfo);
+       
+        var openUserMsg = require("openUiData");
+        this.openUserMsg  = new openUserMsg();
+
+        this.setMyselfInfo(cc.vv.userMgr.userInfo);
         ///总分数
         this.scoreAll = 0;
         ////是不是点击了锤子
@@ -185,6 +197,8 @@ cc.Class({
             this.scoreAllTop = this.scoreAll;
             this.hisScoreLable.string = "最高分："+this.scoreAllTop;
             cc.sys.localStorage.setItem("topScore",this.scoreAll);
+            //提交最高分数
+            this.openUserMsg.submitScoreButtonFunc(this.scoreAllTop)        
         }
         return stack;
     },
@@ -363,8 +377,7 @@ cc.Class({
     judgeOver() {
         for(let x = 0; x < 4;x++){
             for(let y = 0; y < 4; y++) {
-                if(this.tiles[x][y].number === 2048) {
-                    // cc.director.loadScene('success');
+                if(this.tiles[x][y].number === 2048) {     
                     this.initOverNode(true)       
                 }
             }
@@ -373,15 +386,11 @@ cc.Class({
     initOverNode(iswin){
         let overNode = cc.instantiate(this.overNodePerfab);
         this.overLayer.addChild(overNode);
-        let overNodeSp =  overNode.getComponent('overNode');
-        overNode.setPosition(-cc.view.getVisibleSize().width/2,-cc.view.getVisibleSize().height/2);
-        overNode.zIndex = 99;
-        overNode.scoreNum = this.scoreAll;
-       
-        // overNode.refershOverBg();
+        let overNodeSp =  overNode.getComponent('overLayerjs');
         if(iswin){
-            overNodeSp.refershOverBg();
+            overNodeSp.isWin =true;
         }
+        overNodeSp.scoreNum =this.scoreAll;
     },
     initTiles(tileWidth) {
         this.tileLayer.removeAllChildren();
@@ -451,4 +460,68 @@ cc.Class({
             this.isOnChuiZi = true;
         }
     },
+    setMyselfInfo:function(info){
+        if(info){
+            this.nickName.string = info.nickName;
+            this.showHead(info.avatarUrl);
+        }
+    },
+    showHead:function(headUrl){
+        var self = this;
+        if (headUrl && headUrl.length>20) {
+            cc.loader.load({url: headUrl, type: 'jpg'}, (function(err, texture) {
+                if (err) {
+                    console.log(err);
+                }else{
+                    var spr = new cc.SpriteFrame();
+                    spr.setTexture(texture);
+                    self.headImg.getComponent(cc.Sprite).spriteFrame = spr;
+                }
+            }));
+        }else{
+            //this.headImg.getComponent(cc.Sprite).spriteFrame = this.manHeadAss;
+        }
+    },
+    ///分享游戏
+    onBtnShareClick:function(){
+        // 分享要传递的参数   
+        if(cc.sys.platform != cc.sys.WECHAT_GAME){
+            return 
+        }
+        var nick = cc.vv.userMgr.userInfo.nickName;
+        var gender = "女";
+        var city = "北京";
+        var self = this;
+        //分享要显示图片
+        var shareImgUrl = "https://game.xceshi.top/shareImg/2048.png";
+        wx.shareAppMessage()
+        ({
+          title: "我需要你的帮助,赶紧一起来玩吧~",      //分享标题
+          imageUrl: shareImgUrl,
+          query: "nick=" + nick + "&gender=" + gender + "&city=" + city, // 别人点击链接时会得到的数据
+          success: function success(res) {
+            cc.log("分享成功");
+            console.log("分享成功", res);
+            wx.showShareMenu({
+                // 要求小程序返回分享目标信息
+                withShareTicket: true 
+            });
+
+            wx.getShareInfo({
+                shareTicket: res.shareTickets[0],
+                success:function success(res){
+                  console.log('--- 信息 ---', res);
+                  console.log('--- 错误信息 ---', res.errMsg);
+                  console.log('--- 包括敏感数据在内的完整转发信息的加密数据 ---', res.encryptedData);
+                  console.log('--- 错误信息 ---', res.iv);        
+            }});
+
+          },
+          fail: function fail(res) {
+               cc.log("分享失败");
+               console.log("分享失败", res);
+          }
+        });
+    },
+
 });

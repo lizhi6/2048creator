@@ -68,7 +68,7 @@ cc.Class({
     },
     refershBg() {
         
-        var foldPath ="res0"
+        var foldPath ="res1"
         if(this.typeNum>=0 && this.typeNum <= 4 ){
             foldPath ="res"+this.typeNum;
         }
@@ -86,7 +86,7 @@ cc.Class({
         
     },
     changBg(){
-        var foldPath ="res0"
+        var foldPath ="res1"
         if(this.typeNum>=0 && this.typeNum <= 4 ){
             foldPath ="res"+this.typeNum;
         }
